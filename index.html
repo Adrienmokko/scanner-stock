@@ -297,19 +297,21 @@
            * vers l'application de stock.
            */
 
+
           if (window.opener) {
 
             window.opener.postMessage(
-
               {
-                type: 'STOCK_BARCODE_SCAN',
+                type: "STOCK_BARCODE_SCAN",
                 code: code
               },
-
-              '*'
-
+              "*"
             );
-
+          
+            setTimeout(function() {
+              window.close();
+            }, 300);
+          
           }
 
         }
