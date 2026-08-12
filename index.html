@@ -298,14 +298,32 @@
            */
 
 
-          if (window.opener) {
-
-            window.opener.postMessage(
-              {
-                type: "STOCK_BARCODE_SCAN",
-                code: code
+            const params =
+              new URLSearchParams(
+                window.location.search
+              );
+            
+            const target =
+              params.get("target") ||
+              "mouvement";
+            
+            const appUrl =
+              "https://script.google.com/macros/s/AKfycbyPvwZg0ibdN25MFjR3HU5SviDueXFBIcQuXa9UHfR5knG5-AD-6p9Lc0awEatd1Kcm/exec";
+            
+            setTimeout(
+              function() {
+            
+                window.location.href =
+                  appUrl +
+                  "?barcode=" +
+                  encodeURIComponent(code) +
+                  "&target=" +
+                  encodeURIComponent(target) +
+                  "&scanId=" +
+                  Date.now();
+            
               },
-              "*"
+              300
             );
           
             setTimeout(function() {
