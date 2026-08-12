@@ -144,9 +144,66 @@
     }
 
 
-    function demarrerScanner() {
 
+
+    async function demarrerScanner() {
+
+      afficherMessage(
+        'Test de la caméra...',
+        ''
+      );
+    
+      try {
+    
+        const stream =
+          await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'environment'
+            },
+            audio: false
+          });
+    
+        afficherMessage(
+          'Caméra autorisée. Démarrage du lecteur...',
+          ''
+        );
+    
+        stream
+          .getTracks()
+          .forEach(function(track) {
+            track.stop();
+          });
+    
+      } catch (error) {
+    
+        console.error(
+          'Erreur caméra iPhone :',
+          error
+        );
+    
+        afficherMessage(
+          'Erreur caméra : ' +
+          (
+            error && error.name
+              ? error.name
+              : String(error)
+          ),
+          'error'
+        );
+    
+        return;
+      }
+    
+    
       if (typeof Quagga === 'undefined') {
+    
+        afficherMessage(
+          'Erreur : Quagga non chargé.',
+          'error'
+        );
+    
+        return;
+      }
 
         afficherMessage(
           'Erreur : lecteur de code-barres non chargé.',
