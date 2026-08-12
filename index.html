@@ -6,22 +6,17 @@
 
   <meta
     name="viewport"
-    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    content="width=device-width, initial-scale=1.0"
   >
 
-  <title>Scanner Stock</title>
+  <title>Scanner CODE 128</title>
 
   <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     html,
     body {
       margin: 0;
-      padding: 0;
       width: 100%;
       height: 100%;
       background: #111;
@@ -34,25 +29,23 @@
       flex-direction: column;
     }
 
-    header {
+    #status {
       padding: 18px;
       text-align: center;
-      font-size: 22px;
+      font-size: 18px;
       font-weight: bold;
-      background: #111;
     }
 
     #scanner {
       position: relative;
       flex: 1;
       min-height: 400px;
-      overflow: hidden;
       background: black;
+      overflow: hidden;
     }
 
     #scanner video,
     #scanner canvas {
-      position: absolute;
       width: 100% !important;
       height: 100% !important;
       object-fit: cover;
@@ -60,19 +53,18 @@
 
     .cadre {
       position: absolute;
+      z-index: 10;
 
-      width: 88%;
+      left: 7%;
+      right: 7%;
+      top: 50%;
+
       height: 160px;
 
-      top: 50%;
-      left: 50%;
-
-      transform: translate(-50%, -50%);
+      transform: translateY(-50%);
 
       border: 3px solid white;
-      border-radius: 14px;
-
-      z-index: 20;
+      border-radius: 12px;
 
       pointer-events: none;
     }
@@ -87,33 +79,16 @@
       height: 3px;
 
       background: red;
-
-      z-index: 21;
-    }
-
-    #status {
-      padding: 20px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-      min-height: 65px;
-    }
-
-    .success {
-      color: #58e38c;
-    }
-
-    .error {
-      color: #ff6b6b;
     }
   </style>
+
 </head>
 
 <body>
 
-  <header>
-    Scanner le code-barres
-  </header>
+  <div id="status">
+    JavaScript en attente...
+  </div>
 
   <div id="scanner">
 
@@ -123,126 +98,75 @@
 
   </div>
 
-  <div id="status">
-    Démarrage de la caméra...
-  </div>
-
 
   <script>
 
-    let detectionFaite = false;
+    const status =
+      document.getElementById("status");
 
 
-    function afficherMessage(message, classe = '') {
-
-      const status =
-        document.getElementById('status');
-
-      status.textContent = message;
-
-      status.className = classe;
-    }
+    status.textContent =
+      "JavaScript OK";
 
 
+    if (
+      typeof Quagga === "undefined"
+    ) {
 
+      status.textContent =
+        "ERREUR : Quagga non charge";
 
-    async function demarrerScanner() {
+    } else {
 
-      afficherMessage(
-        'Test de la caméra...',
-        ''
-      );
-    
-      try {
-    
-        const stream =
-          await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: 'environment'
-            },
-            audio: false
-          });
-    
-        afficherMessage(
-          'Caméra autorisée. Démarrage du lecteur...',
-          ''
-        );
-    
-        stream
-          .getTracks()
-          .forEach(function(track) {
-            track.stop();
-          });
-    
-      } catch (error) {
-    
-        console.error(
-          'Erreur caméra iPhone :',
-          error
-        );
-    
-        afficherMessage(
-          'Erreur caméra : ' +
-          (
-            error && error.name
-              ? error.name
-              : String(error)
-          ),
-          'error'
-        );
-    
-        return;
-      }
-    
-    
-      if (typeof Quagga === 'undefined') {
-    
-        afficherMessage(
-          'Erreur : Quagga non chargé.',
-          'error'
-        );
-    
-        return;
-      }
-
-        afficherMessage(
-          'Erreur : lecteur de code-barres non chargé.',
-          'error'
-        );
-
-        return;
-      }
+      status.textContent =
+        "Quagga charge. Demarrage camera...";
 
 
       Quagga.init(
-
         {
 
           inputStream: {
 
-            type: 'LiveStream',
+            type:
+              "LiveStream",
 
             target:
-              document.querySelector('#scanner'),
+              document.querySelector(
+                "#scanner"
+              ),
 
+            constraints: {
 
-          constraints: {
-            facingMode: 'environment'
+              facingMode:
+                "environment"
+
+            }
+
           },
+
+
+          decoder: {
+
+            readers: [
+              "code_128_reader"
+            ]
+
+          },
+
+
+          locate:
+            true,
 
 
           locator: {
 
-            patchSize: 'medium',
+            patchSize:
+              "medium",
 
-            halfSample: true
+            halfSample:
+              true
 
-          },
-
-
-          locate: true,
-
-          frequency: 10
+          }
 
         },
 
@@ -251,20 +175,22 @@
 
           if (error) {
 
-            console.error(error);
+            status.textContent =
+              "ERREUR CAMERA : " +
+              (
+                error.name ||
+                error.message ||
+                String(error)
+              );
 
-            afficherMessage(
-              'Impossible d’ouvrir la caméra.',
-              'error'
-            );
+            console.error(error);
 
             return;
           }
 
 
-          afficherMessage(
-            'Placez le CODE 128 dans le cadre.'
-          );
+          status.textContent =
+            "Camera OK - presentez le CODE 128";
 
 
           Quagga.start();
@@ -275,109 +201,34 @@
 
 
       Quagga.onDetected(
-
         function(result) {
 
-          if (detectionFaite) {
-            return;
-          }
-
-
           if (
-            !result ||
-            !result.codeResult ||
-            !result.codeResult.code
+            result &&
+            result.codeResult &&
+            result.codeResult.code
           ) {
-            return;
-          }
+
+            const code =
+              result.codeResult.code;
 
 
-          const code =
-            String(
-              result.codeResult.code
-            )
-            .trim()
-            .toUpperCase();
+            status.textContent =
+              "CODE DETECTE : " +
+              code;
 
 
-          if (!code) {
-            return;
-          }
+            try {
+              Quagga.stop();
+            } catch (e) {
+            }
 
-
-          detectionFaite = true;
-
-
-          afficherMessage(
-            'Code détecté : ' + code,
-            'success'
-          );
-
-
-          if (navigator.vibrate) {
-            navigator.vibrate(150);
-          }
-
-
-          try {
-            Quagga.stop();
-          } catch (e) {
-            console.log(e);
-          }
-
-
-          /*
-           * Plus tard, nous utiliserons cette partie
-           * pour renvoyer automatiquement le code
-           * vers l'application de stock.
-           */
-
-
-            const params =
-              new URLSearchParams(
-                window.location.search
-              );
-            
-            const target =
-              params.get("target") ||
-              "mouvement";
-            
-            const appUrl =
-              "https://script.google.com/macros/s/AKfycbyPvwZg0ibdN25MFjR3HU5SviDueXFBIcQuXa9UHfR5knG5-AD-6p9Lc0awEatd1Kcm/exec";
-            
-            setTimeout(
-              function() {
-            
-                window.location.href =
-                  appUrl +
-                  "?barcode=" +
-                  encodeURIComponent(code) +
-                  "&target=" +
-                  encodeURIComponent(target) +
-                  "&scanId=" +
-                  Date.now();
-            
-              },
-              300
-            );
-          
-            setTimeout(function() {
-              window.close();
-            }, 300);
-          
           }
 
         }
-
       );
 
     }
-
-
-    document.addEventListener(
-      'DOMContentLoaded',
-      demarrerScanner
-    );
 
   </script>
 
