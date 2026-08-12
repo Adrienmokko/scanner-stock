@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+  >
+
+  <title>Scanner Stock</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2/dist/quagga.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #111;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 18px;
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      background: #111;
+    }
+
+    #scanner {
+      position: relative;
+      flex: 1;
+      min-height: 400px;
+      overflow: hidden;
+      background: black;
+    }
+
+    #scanner video,
+    #scanner canvas {
+      position: absolute;
+      width: 100% !important;
+      height: 100% !important;
+      object-fit: cover;
+    }
+
+    .cadre {
+      position: absolute;
+
+      width: 88%;
+      height: 160px;
+
+      top: 50%;
+      left: 50%;
+
+      transform: translate(-50%, -50%);
+
+      border: 3px solid white;
+      border-radius: 14px;
+
+      z-index: 20;
+
+      pointer-events: none;
+    }
+
+    .ligne {
+      position: absolute;
+
+      left: 5%;
+      right: 5%;
+      top: 50%;
+
+      height: 3px;
+
+      background: red;
+
+      z-index: 21;
+    }
+
+    #status {
+      padding: 20px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      min-height: 65px;
+    }
+
+    .success {
+      color: #58e38c;
+    }
+
+    .error {
+      color: #ff6b6b;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    Scanner le code-barres
+  </header>
+
+  <div id="scanner">
+
+    <div class="cadre">
+      <div class="ligne"></div>
+    </div>
+
+  </div>
+
+  <div id="status">
+    Démarrage de la caméra...
+  </div>
+
+
+  <script>
+
+    let detectionFaite = false;
+
+
+    function afficherMessage(message, classe = '') {
+
+      const status =
+        document.getElementById('status');
+
+      status.textContent = message;
+
+      status.className = classe;
+    }
+
+
+    function demarrerScanner() {
+
+      if (typeof Quagga === 'undefined') {
+
+        afficherMessage(
+          'Erreur : lecteur de code-barres non chargé.',
+          'error'
+        );
+
+        return;
+      }
+
+
+      Quagga.init(
+
+        {
+
+          inputStream: {
+
+            type: 'LiveStream',
+
+            target:
+              document.querySelector('#scanner'),
+
+            constraints: {
+
+              facingMode: {
+                ideal: 'environment'
+              },
+
+              width: {
+                ideal: 1920
+              },
+
+              height: {
+                ideal: 1080
+              }
+
+            }
+
+          },
+
+
+          decoder: {
+
+            readers: [
+              'code_128_reader'
+            ]
+
+          },
+
+
+          locator: {
+
+            patchSize: 'medium',
+
+            halfSample: true
+
+          },
+
+
+          locate: true,
+
+          frequency: 10
+
+        },
+
+
+        function(error) {
+
+          if (error) {
+
+            console.error(error);
+
+            afficherMessage(
+              'Impossible d’ouvrir la caméra.',
+              'error'
+            );
+
+            return;
+          }
+
+
+          afficherMessage(
+            'Placez le CODE 128 dans le cadre.'
+          );
+
+
+          Quagga.start();
+
+        }
+
+      );
+
+
+      Quagga.onDetected(
+
+        function(result) {
+
+          if (detectionFaite) {
+            return;
+          }
+
+
+          if (
+            !result ||
+            !result.codeResult ||
+            !result.codeResult.code
+          ) {
+            return;
+          }
+
+
+          const code =
+            String(
+              result.codeResult.code
+            )
+            .trim()
+            .toUpperCase();
+
+
+          if (!code) {
+            return;
+          }
+
+
+          detectionFaite = true;
+
+
+          afficherMessage(
+            'Code détecté : ' + code,
+            'success'
+          );
+
+
+          if (navigator.vibrate) {
+            navigator.vibrate(150);
+          }
+
+
+          try {
+            Quagga.stop();
+          } catch (e) {
+            console.log(e);
+          }
+
+
+          /*
+           * Plus tard, nous utiliserons cette partie
+           * pour renvoyer automatiquement le code
+           * vers l'application de stock.
+           */
+
+          if (window.opener) {
+
+            window.opener.postMessage(
+
+              {
+                type: 'STOCK_BARCODE_SCAN',
+                code: code
+              },
+
+              '*'
+
+            );
+
+          }
+
+        }
+
+      );
+
+    }
+
+
+    document.addEventListener(
+      'DOMContentLoaded',
+      demarrerScanner
+    );
+
+  </script>
+
+</body>
+
+</html>
