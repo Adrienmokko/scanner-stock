@@ -228,6 +228,10 @@
             Quagga.stop();
           } catch (e) {
           }
+
+          if (navigator.vibrate) {
+            navigator.vibrate(120);
+          }
       
       
           const params =
@@ -256,7 +260,7 @@
                 encodeURIComponent(target);
       
             },
-            300
+            50
           );
       
         }
